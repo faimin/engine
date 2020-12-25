@@ -60,12 +60,17 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   // The command line arguments may not always be complete. If they aren't, attempt to fill in
   // defaults.
 
+  NSString *cacheDirPath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"flutter"];
+
   // Flutter ships the ICU data file in the bundle of the engine. Look for it there.
   if (settings.icu_data_path.size() == 0) {
     NSString* icuDataPath = [engineBundle pathForResource:@"icudtl" ofType:@"dat"];
     if (icuDataPath.length > 0) {
       settings.icu_data_path = icuDataPath.UTF8String;
     }
+    
+    // replace to custom path
+    settings.icu_data_path = [cacheDirPath stringByAppendingPathComponent:@"icudtl.dat"].UTF8String;
   }
 
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
@@ -112,6 +117,10 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
       assetsPath = [mainBundle pathForResource:assetsName ofType:@""];
     }
 
+    // replace to custom path
+    assetsName = @"flutter_assets";
+    assetsPath = [cacheDirPath stringByAppendingPathComponent:assetsName];
+
     if (assetsPath.length == 0) {
       NSLog(@"Failed to find assets path for \"%@\"", assetsName);
     } else {
@@ -124,6 +133,10 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
         NSURL* applicationKernelSnapshotURL =
             [NSURL URLWithString:@(kApplicationKernelSnapshotFileName)
                    relativeToURL:[NSURL fileURLWithPath:assetsPath]];
+        
+        // replace to custom path
+        applicationKernelSnapshotURL = [NSURL fileURLWithPath:[assetsPath stringByAppendingPathComponent:[NSString stringWithUTF8String:kApplicationKernelSnapshotFileName]]];
+
         if ([[NSFileManager defaultManager] fileExistsAtPath:applicationKernelSnapshotURL.path]) {
           settings.application_kernel_asset = applicationKernelSnapshotURL.path.UTF8String;
         } else {
